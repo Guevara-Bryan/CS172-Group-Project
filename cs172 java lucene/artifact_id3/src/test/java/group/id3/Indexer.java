@@ -27,10 +27,15 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.QueryBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -50,22 +55,56 @@ import java.util.Iterator; //json parsing
 
 public class Indexer {
     private IndexWriter writer;
+    //private String indexDir;
+    private StandardAnalyzer analyzer; //tokenifies the document
+    private Directory indexDirectory; //directory of the index
+    private IndexSearcher isearcher; //
+    private QueryBuilder builder;
 
     //constructor, assigns writer
-    public Indexer (String Indexdir) throws IOException 
+    //  json file in project root ./Data.json
+    //  index file in Index folder in project root
+    public Indexer () throws IOException 
     {
+        String workingDir = System.getProperty("user.dir");
+        String indexDir = workingDir+"\\Index";
         //index directory, .open takes a 'Path type'
-        Path path = (new File(Indexdir)).toPath();
-        Directory indexDirectory = FSDirectory.open(path); 
+        Path path = (new File(indexDir)).toPath();
+        indexDirectory = FSDirectory.open(path); 
 
         //create the indexer: writer    
-        StandardAnalyzer analyzer = new StandardAnalyzer();
+        analyzer = new StandardAnalyzer();
         IndexWriterConfig conf = new IndexWriterConfig(analyzer);
         writer = new IndexWriter(indexDirectory,conf);
 
+        try {
+            //  json file in project root folder
+            this.indexFile("Data.json");
+            this.close(); 
+            this.initializeSearcher();
+
+            //parseJSON();
+        } catch (Exception e) {
+            
+            e.printStackTrace();
+            System.out.println("unable to read file, exiting...");
+            System.exit(1);
+        }
+
         
     }
+    private void initializeSearcher() throws IOException
+    {
+        DirectoryReader ireader = DirectoryReader.open(indexDirectory);
+        isearcher = new IndexSearcher(ireader);
+        builder = new QueryBuilder(analyzer);
 
+    }
+    //destructor
+    protected void finalize() throws CorruptIndexException, IOException 
+    {
+        
+    }
     //closes the writer
     public void close() throws CorruptIndexException, IOException {
         writer.close();
@@ -89,7 +128,7 @@ public class Indexer {
         document.add(titleField);
         document.add(URLField);
 
-        System.out.println(doc.get("title"));
+        //System.out.println(doc.get("title"));
 
 
         return document;
@@ -125,6 +164,27 @@ public class Indexer {
         
         
      }
+     public String search(String queryText) throws IOException
+     {
+         String defaultField = "content";
+         return this.search(queryText,defaultField);
+     }
+     public String search(String queryText,String field) throws IOException
+     {
+        int numResults = 10;
+        Query q = builder.createPhraseQuery(field, queryText);
+        ScoreDoc[] hits = isearcher.search(q, numResults).scoreDocs;
+        
+        String returnedStr = "";
+        for (int i = 0; i < hits.length; i++) {
+            Document hitDoc = isearcher.doc(hits[i].doc);
+            returnedStr += hitDoc.get("title") + "\n";
+            //returnedStr += hitDoc.get("url") + "\n";
+
+          }
+
+        return returnedStr;
+     }
 
      //
      //reference: https://www.geeksforgeeks.org/parse-json-java/
@@ -159,25 +219,13 @@ public class Indexer {
      
     public static void main(String[] args) throws IOException {
         //System.out.println("Hello World");
-        String workingDir = System.getProperty("user.dir");
-        String indexDir = workingDir+"\\Data";
-        System.out.println("Working Directory = " + workingDir);
 
-        Indexer indexer = new Indexer(indexDir);
 
-        try {
-            //  json file in project root folder
-            indexer.indexFile("Data.json");
-            indexer.close();
-            
+        Indexer indexer = new Indexer();
+        String search_results = indexer.search("Justin");
+        System.out.println(search_results);
 
-            //parseJSON();
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            System.out.println("unable to read file, exiting...");
-            System.exit(1);
-        }
+
 
 
         //parse json file
