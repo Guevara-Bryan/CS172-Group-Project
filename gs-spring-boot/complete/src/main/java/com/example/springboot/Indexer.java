@@ -29,23 +29,28 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Iterator; //json parsing
 
+import java.util.*;
 
-
+import com.google.gson.Gson; 
+import com.google.gson.GsonBuilder; 
 
 
 public class Indexer {
+    private final String file_name = "Data2.json";
     private IndexWriter writer;
     //private String indexDir;
     private StandardAnalyzer analyzer; //tokenifies the document
     private Directory indexDirectory; //directory of the index
     private IndexSearcher isearcher; //
     private QueryBuilder builder;
+    private int counter;
 
     //constructor, assigns writer
     //  json file in project root ./Data.json
     //  index file in Index folder in project root
     public Indexer () throws IOException 
     {
+        counter = 0;
         String workingDir = System.getProperty("user.dir");
         String indexDir = workingDir+"\\Index";
         //index directory, .open takes a 'Path type'
@@ -59,7 +64,7 @@ public class Indexer {
 
         try {
             //  json file in project root folder
-            this.indexFile("Data2.json");
+            this.indexFile(file_name);
             this.close(); 
             this.initializeSearcher();
 
@@ -100,7 +105,7 @@ public class Indexer {
         //Field contentField = new TextField("contents", new FileReader(file));
 
 
-        Field contentField = new TextField("content",  (String) doc.get("content"), Field.Store.NO); //don't store body in index
+        Field contentField = new TextField("content",  (String) doc.get("content"), Field.Store.YES); //don't store body in index
         Field titleField = new StringField("title",(String) doc.get("title"),Field.Store.YES);
         Field URLField = new StringField("url",(String) doc.get("url"),Field.Store.YES);
   
@@ -144,10 +149,45 @@ public class Indexer {
         
         
      }
-     public String search(String queryText) throws IOException
+    
+    public String search(String queryText, int numResults) throws IOException
      {
-         String defaultField = "content";
-         return this.search(queryText,defaultField);
+        String field = "content";
+
+        Query q = builder.createPhraseQuery(field, queryText);
+        ScoreDoc[] hits = isearcher.search(q, numResults).scoreDocs;
+
+        LinkedHashSet<JSONObject> set=new LinkedHashSet();  
+        
+
+        for (int i = 0; i < hits.length; i++) {
+            Document hitDoc = isearcher.doc(hits[i].doc);
+            JSONObject result_map = new JSONObject();
+
+            String title = hitDoc.get("title");
+            String url = hitDoc.get("url");
+            String content = hitDoc.get("content");
+            String score = String.format("%.3f", hits[i].score);
+
+            String snip = (new Snippet()).generateSnippet(queryText,content);
+
+            result_map.put("title", title);
+            result_map.put("url", url);
+            result_map.put("content", snip);
+            result_map.put("score", score);
+            result_map.put("id", String.valueOf(counter));
+            counter++;
+
+
+            set.add(result_map);
+
+            
+
+
+          }
+
+ 
+        return new Gson().toJson(set );
      }
      public String search(String queryText,String field) throws IOException
      {
