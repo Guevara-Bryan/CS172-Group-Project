@@ -25,3 +25,6 @@ To run the crawler follow these instructions
 
 ## Repo for the frontend done by Bryan.
 [Shortcut to Frontend Repo](https://github.com/Guevara-Bryan/mma-search)
+
+##Live Demo
+[Demo](http://mma-search.herokuapp.com/)
