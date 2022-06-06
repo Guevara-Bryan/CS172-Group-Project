@@ -36,22 +36,73 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Iterator; //json parsing
 
-@RestController
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.beans.factory.annotation.Autowired;
+
+
+
+import java.util.Map;
+
+@Controller
 public class HelloController {
 	private Indexer indexer;
 
-	@GetMapping("/")
-	public String index() throws IOException {
-		indexer = new Indexer();
 
-		return indexer.search("UFC");
+	@Autowired
+	HelloController()throws IOException {
+		indexer = new Indexer();
 	}
+
+/* 	@RequestMapping("/")
+	public String getHomePage()  {
+		return "index.html";
+	} */
 	
-	@GetMapping("/query")
-	public ResponseEntity<String> customHeader() {
-	       	return ResponseEntity.ok()
-	       		.header("Header", "Results")
-	 			.body("Insert results here");
-	}		
+
+	@Autowired
+    @RequestMapping(value = "/query")
+	@CrossOrigin(origins = "*")
+    public ResponseEntity<String> execute(@RequestBody Map<String, Object> map) throws IOException
+    {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("content-type", "application/json");
+        //headers.add("access-control-allow-origin", "*");
+        headers.add("vary", "accept-encoding");
+
+		String q = "";
+		String c = "";
+		for (Map.Entry<String, Object> entry : map.entrySet()) {
+			if(entry.getKey() == "query"){
+				q = entry.getValue().toString();
+			}
+			if(entry.getKey() == "count"){
+				c = entry.getValue().toString();
+			}
+
+
+		}
+		System.out.println("Incoming Query: " + q + ':' + c);
+
+
+		String result = "";
+		try{
+			result = indexer.search(q,Integer.parseInt(c));
+		}
+		catch(Exception e){
+			System.out.println(e);
+		}
+
+ 
+        return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(result);
+    }
 
 }
