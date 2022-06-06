@@ -22,3 +22,6 @@ To run the crawler follow these instructions
 
 ## Files for the spring boot backend 
 [Shortcut to backend files](./gs-spring-boot/complete/src/main/java/com/example/springboot/)
+
+## Repo for the frontend done by Bryan.
+[Shortcut to Frontend Repo](./gs-spring-boot/complete/src/main/java/com/example/springboot/)
