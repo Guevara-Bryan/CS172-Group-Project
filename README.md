@@ -21,4 +21,4 @@ To run the crawler follow these instructions
 
 
 ## Files for the spring boot backend 
-[Shortcut to backend files](./gs-spring-boot/complete/src/main/java/com/example/springboot/Indexer.java)
+[Shortcut to backend files](./gs-spring-boot/complete/src/main/java/com/example/springboot/)
