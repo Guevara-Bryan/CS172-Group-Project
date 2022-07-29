@@ -21,10 +21,8 @@ dependencies {
 	testImplementation('org.springframework.boot:spring-boot-starter-test')
 	// end::tests[]
 	implementation 'org.apache.lucene:lucene-core:9.2.0'
+	implementation 'com.google.code.gson:gson:2.9.0'
 	implementation 'com.googlecode.json-simple:json-simple:1.1.1'
-
-//Thanks for using https://jar-download.com
-
 }
 
 test {
